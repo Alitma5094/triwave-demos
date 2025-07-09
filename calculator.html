@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Calculator with AST</title>
+    <style>
+        body {
+            background-color: #f0f0f0;
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .calculator {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            width: 260px;
+        }
+
+        .display {
+            background-color: #222;
+            color: #fff;
+            text-align: right;
+            font-size: 2rem;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            height: 60px;
+            overflow-x: auto;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        button {
+            font-size: 1.2rem;
+            padding: 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #ddd;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        button.operator {
+            background-color: #ffa726;
+            color: white;
+        }
+
+        button.equal {
+            background-color: #26a69a;
+            color: white;
+        }
+
+        button.clear {
+            background-color: #ef5350;
+            color: white;
+        }
+
+        button:hover {
+            background-color: #ccc;
+        }
+
+        .container {
+            display: flex;
+            gap: 40px;
+            padding: 20px;
+            align-items: flex-start;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .instructions {
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            max-width: 300px;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        .instructions h2 {
+            margin-top: 0;
+            color: #333;
+            font-size: 1.4rem;
+        }
+
+        .instructions ul {
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 10px;
+        }
+
+        .explanation {
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 800px;
+            margin: 40px auto 0;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        .explanation h2 {
+            margin-top: 0;
+            color: #333;
+            font-size: 1.5rem;
+        }
+
+        .explanation h3 {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            color: #444;
+        }
+
+        .explanation p {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="calculator">
+            <div class="display" id="display">0</div>
+            <div class="buttons">
+                <button onclick="addToken('7', true)">7</button>
+                <button onclick="addToken('8', true)">8</button>
+                <button onclick="addToken('9', true)">9</button>
+                <button class="operator" onclick="addToken('/', false)">÷</button>
+
+                <button onclick="addToken('4', true)">4</button>
+                <button onclick="addToken('5', true)">5</button>
+                <button onclick="addToken('6', true)">6</button>
+                <button class="operator" onclick="addToken('*', false)">×</button>
+
+                <button onclick="addToken('1', true)">1</button>
+                <button onclick="addToken('2', true)">2</button>
+                <button onclick="addToken('3', true)">3</button>
+                <button class="operator" onclick="addToken('-', false)">−</button>
+
+                <button onclick="addToken('0', true)">0</button>
+                <button onclick="addToken('.', true)">.</button>
+                <button class="equal" onclick="run()">=</button>
+                <button class="operator" onclick="addToken('+', false)">+</button>
+
+                <button class="clear" onclick="clearAll()">C</button>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <h2>How to Use</h2>
+            <ul>
+                <li>Click numbers to input digits.</li>
+                <li>Use +, −, ×, ÷ for operations.</li>
+                <li>Click "=" to evaluate the expression.</li>
+                <li>Click "C" to clear the input.</li>
+                <li>Supports decimals (e.g., 3.14).</li>
+                <li>Follows correct operator precedence.</li>
+            </ul>
+        </div>
+
+        <div class="explanation">
+            <h2>How the Calculator Works</h2>
+
+            <h3>1. Lexing (Tokenizing)</h3>
+            <p>The input string is broken into <strong>tokens</strong> — numbers and operators like <code>+</code>,
+                <code>*</code>, etc.</p>
+
+            <h3>2. Parsing (Building the AST)</h3>
+            <p>Tokens are converted into an <strong>Abstract Syntax Tree (AST)</strong> based on operator precedence.
+            </p>
+            <ul>
+                <li><strong>Example:</strong> <code>2 + 3 * 4</code> becomes <code>{ +, 2, { *, 3, 4 } }</code></li>
+            </ul>
+
+            <h3>3. Evaluating</h3>
+            <p>The AST is recursively evaluated from the bottom up to get the result.</p>
+            <ul>
+                <li><strong>Step:</strong> <code>3 * 4 = 12</code>, then <code>2 + 12 = 14</code></li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let input = "";
+        let tokens = [];
+        let newNum = false;
+        const display = document.getElementById('display');
+
+        function addToken(value, num) {
+            if (newNum && num) {
+                newNum = false;
+                clearAll();
+            }
+            input += value;
+            updateDisplay();
+        }
+
+        function clearAll() {
+            input = "";
+            display.innerText = '0';
+        }
+
+        function updateDisplay() {
+            display.innerText = input || '0';
+        }
+
+        function lex() {
+            loc = 0;
+
+            while (loc < input.length) {
+                character = input[loc];
+
+                switch (character) {
+                    case "*":
+                    case "/":
+                    case "+":
+                    case "-":
+                        tokens.push(character);
+                        loc++;
+                        break;
+
+                    default:
+                        let num = '';
+                        let hasDot = false;
+
+                        while (loc < input.length) {
+                            let ch = input[loc];
+
+                            if (ch >= '0' && ch <= '9') {
+                                num += ch;
+                                loc++;
+                            } else if (ch === '.' && !hasDot) {
+                                hasDot = true;
+                                num += ch;
+                                loc++;
+                            } else {
+                                break;
+                            }
+                        }
+
+                        if (num.length > 0) {
+                            tokens.push(Number(num));
+                        } else {
+                            // skip unknown characters
+                            loc++;
+                        }
+                }
+            }
+            return tokens;
+        }
+
+        function parseExpression(minPrecedence = 0) {
+            let left = parsePrimary();
+
+            while (loc < tokens.length) {
+                const op = peek();
+                const prec = precedence(op);
+
+                if (prec === 0 || prec < minPrecedence) {
+                    break; // Not an operator or lower precedence
+                }
+
+                next(); // consume the operator
+
+                if (loc >= tokens.length) {
+                    throw new Error(`Expected expression after operator '${op}'`);
+                }
+
+                const right = parseExpression(prec + 1);
+
+                left = { type: 'BinaryExpression', operator: op, left, right };
+            }
+
+            return left;
+        }
+
+
+        function parsePrimary() {
+            if (loc >= tokens.length) {
+                throw new Error("Unexpected end of input; expected number.");
+            }
+
+            const token = next();
+            const num = parseFloat(token);
+            if (isNaN(num)) {
+                throw new Error("Invalid number: " + token);
+            }
+
+            return { type: 'Literal', value: num };
+        }
+
+
+        function precedence(op) {
+            switch (op) {
+                case "+": case "-": return 1;
+                case "*": case "/": return 2;
+                default: return 0;
+            }
+        }
+
+        function peek() {
+            return tokens[loc];
+        }
+
+        function next() {
+            return tokens[loc++];
+        }
+
+        function evaluate(ast) {
+            if (ast.type === 'Literal') return ast.value;
+
+            const left = evaluate(ast.left);
+            const right = evaluate(ast.right);
+
+            switch (ast.operator) {
+                case "+": return left + right;
+                case "-": return left - right;
+                case "*": return left * right;
+                case "/": return left / right;
+                default: throw new Error("Unknown operator: " + ast.operator);
+            }
+        }
+
+        function run() {
+            loc = 0;
+            tokens = [];
+            try {
+                lex();
+                loc = 0;
+                const ast = parseExpression();
+                const result = evaluate(ast);
+                input = result;
+                newNum = true;
+                display.innerText = result;
+            } catch (e) {
+                display.innerText = "Error: " + e.message;
+            }
+        }
+
+    </script>
+</body>
+
+</html>
