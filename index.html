@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Practical Webpage</title>
+    <style>
+        h1 {
+            color: teal;
+            text-align: center;
+        }
+
+        .box {
+            width: 200px;
+            height: 100px;
+            background-color: lightcoral;
+            border-radius: 10px;
+            margin: 20px auto;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .navbar a {
+            text-decoration: none;
+            color: white;
+            background-color: #333;
+            padding: 10px 15px;
+            border-radius: 5px;
+        }
+
+        .navbar a:hover {
+            background-color: #555;
+        }
+
+        button:hover {
+            background-color: darkblue;
+            color: white;
+        }
+
+        table {
+            width: 50%;
+            margin: 20px auto;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border: 1px solid #444;
+            padding: 8px;
+            text-align: center;
+        }
+
+        #logo {
+            height: 130px;
+        }
+    </style>
+    <script>
+        window.onload = function () {
+            alert("Welcome to the Practical Webpage!");
+        };
+
+        function changeText() {
+            document.getElementById("changePara").innerText = "You clicked the button!";
+        }
+
+        function validateForm() {
+            const name = document.forms["myForm"]["name"].value;
+            if (name === "") {
+                alert("Name must be filled out");
+                return false;
+            }
+        }
+
+        let count = 0;
+        function incrementCounter() {
+            count++;
+            document.getElementById("counter").innerText = count;
+        }
+    </script>
+</head>
+
+<body>
+    <div class="navbar">
+        <a href="#">Home</a>
+        <a href="#">About</a>
+        <a href="#">Contact</a>
+    </div>
+
+    <h1>HTML Demo</h1>
+
+    <p>This is a simple paragraph demonstrating HTML structure.</p>
+
+    <ul>
+        <li>HTML</li>
+        <li>CSS</li>
+        <li>JavaScript</li>
+    </ul>
+
+    <img src="https://triwavesolutions.com/wp-content/uploads/2023/08/logo.png" alt="Placeholder Image" id="logo">
+
+    <p>Visit <a href="https://www.example.com" target="_blank">Example Site</a> for more info.</p>
+
+    <form name="myForm" onsubmit="return validateForm()">
+        Name: <input type="text" name="name"><br><br>
+        Email: <input type="email" name="email"><br><br>
+        <button type="submit">Submit</button>
+    </form>
+
+    <table>
+        <tr>
+            <th>Student Name</th>
+            <th>Math</th>
+            <th>Science</th>
+        </tr>
+        <tr>
+            <td>Alice</td>
+            <td>85</td>
+            <td>90</td>
+        </tr>
+        <tr>
+            <td>Bob</td>
+            <td>78</td>
+            <td>82</td>
+        </tr>
+    </table>
+
+    <div class="box"></div>
+
+    <p id="changePara">Click the button to change this text.</p>
+    <button onclick="changeText()">Change Text</button>
+
+    <p>Button Click Count: <span id="counter">0</span></p>
+    <button onclick="incrementCounter()">Click Me!</button>
+
+</body>
+
+</html>
