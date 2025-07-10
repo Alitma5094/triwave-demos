@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Info Manager</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        form {
+            margin-bottom: 20px;
+        }
+
+        input {
+            margin: 5px;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid #ccc;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 10px;
+        }
+
+        .highlight {
+            background-color: yellow;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        ul li {
+            cursor: pointer;
+            margin: 5px 0;
+        }
+
+        .selected {
+            background-color: #add8e6;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Student Info Manager</h1>
+
+    <form id="studentForm">
+        <input type="text" id="name" placeholder="Name" required>
+        <input type="email" id="email" placeholder="Email" required>
+        <input type="number" id="marks" placeholder="Marks" required>
+        <button type="submit">Add Student</button>
+    </form>
+
+    <table id="studentTable">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Marks</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <hr>
+    <h2>Clickable List</h2>
+    <ul id="itemList">
+        <li>Item 1</li>
+        <li>Item 2</li>
+        <li>Item 3</li>
+    </ul>
+
+    <hr>
+    <h2>Toggle Section</h2>
+    <button onclick="toggleSection()">Toggle Section</button>
+    <div id="toggleDiv">This section is toggleable.</div>
+
+    <hr>
+    <h2>Dynamic Dropdown</h2>
+    <select id="country" onchange="updateStates()">
+        <option value="">Select Country</option>
+        <option value="USA">USA</option>
+        <option value="India">India</option>
+    </select>
+    <select id="state">
+        <option value="">Select State</option>
+    </select>
+
+    <hr>
+    <h2>Form Validation</h2>
+    <form onsubmit="return validateForm()">
+        <input type="text" id="validName" placeholder="Name" required>
+        <input type="email" id="validEmail" placeholder="Email" required>
+        <button type="submit">Submit</button>
+    </form>
+
+    <script>
+        const studentForm = document.getElementById('studentForm');
+        const studentTable = document.getElementById('studentTable').querySelector('tbody');
+
+        let editIndex = null;
+
+        studentForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const marks = parseInt(document.getElementById('marks').value);
+
+            if (editIndex !== null) {
+                const row = studentTable.rows[editIndex];
+                row.cells[0].textContent = name;
+                row.cells[1].textContent = email;
+                row.cells[2].textContent = marks;
+                editIndex = null;
+            } else {
+                const row = studentTable.insertRow();
+                row.insertCell(0).textContent = name;
+                row.insertCell(1).textContent = email;
+                row.insertCell(2).textContent = marks;
+                const actionCell = row.insertCell(3);
+                actionCell.innerHTML = '<button onclick="editStudent(this)">Edit</button> <button onclick="deleteStudent(this)">Delete</button>';
+            }
+
+            highlightTopScorer();
+            studentForm.reset();
+        });
+
+        function deleteStudent(btn) {
+            const row = btn.parentNode.parentNode;
+            row.remove();
+            highlightTopScorer();
+        }
+
+        function editStudent(btn) {
+            const row = btn.parentNode.parentNode;
+            editIndex = row.rowIndex - 1;
+            document.getElementById('name').value = row.cells[0].textContent;
+            document.getElementById('email').value = row.cells[1].textContent;
+            document.getElementById('marks').value = row.cells[2].textContent;
+        }
+
+        function highlightTopScorer() {
+            let maxMarks = -1;
+            for (let row of studentTable.rows) {
+                const marks = parseInt(row.cells[2].textContent);
+                maxMarks = Math.max(maxMarks, marks);
+            }
+            for (let row of studentTable.rows) {
+                const marks = parseInt(row.cells[2].textContent);
+                row.classList.toggle('highlight', marks === maxMarks);
+            }
+        }
+
+        document.getElementById('itemList').addEventListener('click', function (e) {
+            if (e.target.tagName === 'LI') {
+                for (let li of this.children) {
+                    li.classList.remove('selected');
+                }
+                e.target.classList.add('selected');
+            }
+        });
+
+        function toggleSection() {
+            const div = document.getElementById('toggleDiv');
+            div.classList.toggle('hidden');
+        }
+
+        function updateStates() {
+            const country = document.getElementById('country').value;
+            const stateSelect = document.getElementById('state');
+            stateSelect.innerHTML = '<option value="">Select State</option>';
+            const states = {
+                USA: ['California', 'Texas', 'New York'],
+                India: ['Maharashtra', 'Karnataka', 'Tamil Nadu']
+            };
+            if (states[country]) {
+                states[country].forEach(state => {
+                    const opt = document.createElement('option');
+                    opt.value = state;
+                    opt.textContent = state;
+                    stateSelect.appendChild(opt);
+                });
+            }
+        }
+
+        function validateForm() {
+            const name = document.getElementById('validName').value;
+            const email = document.getElementById('validEmail').value;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            if (!name.trim()) {
+                alert('Name is required');
+                return false;
+            }
+            if (!emailRegex.test(email)) {
+                alert('Invalid email format');
+                return false;
+            }
+            alert('Form submitted successfully!');
+            return true;
+        }
+    </script>
+</body>
+
+</html>
