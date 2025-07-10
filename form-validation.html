@@ -59,13 +59,18 @@
             margin-top: -8px;
             margin-bottom: 10px;
         }
+
+        #message {
+            color: green;
+        }
     </style>
 </head>
 
 <body>
     <div class="signup-container">
         <h2>Sign Up</h2>
-        <form id="signupForm" onsubmit="return validateForm()">
+        <p id="message"></p>
+        <div id="signupForm">
             <input type="text" id="name" placeholder="Full Name">
             <div class="error" id="nameError"></div>
 
@@ -75,52 +80,61 @@
             <input type="password" id="password" placeholder="Password">
             <div class="error" id="passwordError"></div>
 
-            <button type="submit">Register</button>
-        </form>
-    </div>
+            <button type="button" onclick="validateForm()">Register</button>
+            </fordivm>
+        </div>
 
-    <script>
-        function validateForm() {
-            const name = document.getElementById("name").value.trim();
-            const email = document.getElementById("email").value.trim();
-            const password = document.getElementById("password").value;
+        <script>
+            function validateForm() {
+                const name = document.getElementById("name").value.trim();
+                const email = document.getElementById("email").value.trim();
+                const password = document.getElementById("password").value;
 
-            const nameError = document.getElementById("nameError");
-            const emailError = document.getElementById("emailError");
-            const passwordError = document.getElementById("passwordError");
+                const nameError = document.getElementById("nameError");
+                const emailError = document.getElementById("emailError");
+                const passwordError = document.getElementById("passwordError");
 
-            nameError.innerText = "";
-            emailError.innerText = "";
-            passwordError.innerText = "";
+                nameError.innerText = "";
+                emailError.innerText = "";
+                passwordError.innerText = "";
 
-            let valid = true;
+                let valid = true;
 
-            if (name === "") {
-                nameError.innerText = "Name is required.";
-                valid = false;
+                if (name === "") {
+                    nameError.innerText = "Name is required.";
+                    valid = false;
+                }
+
+                const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (email === "") {
+                    emailError.innerText = "Email is required.";
+                    valid = false;
+                } else if (!emailPattern.test(email)) {
+                    emailError.innerText = "Invalid email format.";
+                    valid = false;
+                }
+
+                if (password === "") {
+                    passwordError.innerText = "Password is required.";
+                    valid = false;
+                } else if (password.length < 6) {
+                    passwordError.innerText = "Password must be at least 6 characters.";
+                    valid = false;
+                } else if (!/[a-z]/.test(password)) {
+                    passwordError.innerText = "Password must contain at least one lowercase letter.";
+                    valid = false;
+                } else if (!/[A-Z]/.test(password)) {
+                    passwordError.innerText = "Password must contain at least one uppercase letter.";
+                    valid = false;
+                } else if (!/[^A-Za-z0-9]/.test(password)) {
+                    passwordError.innerText = "Password must contain at least one special character.";
+                    valid = false;
+                }
+                document.getElementById("message").innerText = "Registration successful";
+
+                return valid;
             }
-
-            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (email === "") {
-                emailError.innerText = "Email is required.";
-                valid = false;
-            } else if (!emailPattern.test(email)) {
-                emailError.innerText = "Invalid email format.";
-                valid = false;
-            }
-
-            if (password === "") {
-                passwordError.innerText = "Password is required.";
-                valid = false;
-            } else if (password.length < 6) {
-                passwordError.innerText = "Password must be at least 6 characters.";
-                valid = false;
-            }
-            alert("Registration successful")
-
-            return valid;
-        }
-    </script>
+        </script>
 </body>
 
 </html>
