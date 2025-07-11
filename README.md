@@ -4,3 +4,5 @@
 - Form Validation
 - Calculator Mini Project
 - Student Info Manager
+- Task Manager
+- Weather Dashboard

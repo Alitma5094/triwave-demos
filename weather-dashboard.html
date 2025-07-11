@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Weather Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 2rem;
+            background: #eef2f3;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        #search-section {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        input,
+        button {
+            padding: 0.5rem;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #007BFF;
+            color: white;
+            cursor: pointer;
+        }
+
+        .weather-card {
+            max-width: 400px;
+            margin: 1rem auto;
+            padding: 1rem;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .history {
+            max-width: 400px;
+            margin: 0 auto 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
+        .history button {
+            background: #f0f0f0;
+        }
+
+        .toggle {
+            margin-top: 0.5rem;
+            cursor: pointer;
+            color: #007BFF;
+        }
+
+        .error,
+        .loading {
+            text-align: center;
+            color: red;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Weather Dashboard</h1>
+    <div id="search-section">
+        <input type="text" id="city-input" placeholder="Enter city name" />
+        <button onclick="getWeather()">Search</button>
+    </div>
+    <div style="text-align: center; margin-bottom: 1rem;">
+        <input type="text" id="api-key-input" placeholder="Enter API Key" style="width: 300px;" />
+        <button onclick="saveApiKey()">Save API Key</button>
+    </div>
+    <div class="history" id="search-history"></div>
+    <div class="weather-card" id="weather-card"></div>
+    <div class="loading" id="loading" style="display: none;">Loading...</div>
+    <div class="error" id="error" style="display: none;"></div>
+
+    <script>
+        let useCelsius = true;
+        let history = JSON.parse(localStorage.getItem('weatherHistory')) || [];
+
+        function getApiKey() {
+            return localStorage.getItem('weatherApiKey');
+        }
+
+        function saveApiKey() {
+            const key = document.getElementById('api-key-input').value.trim();
+            if (key) {
+                localStorage.setItem('weatherApiKey', key);
+                alert('API key saved!');
+            }
+        }
+
+        function getWeather(city = null) {
+            const apiKey = getApiKey();
+            if (!apiKey) {
+                alert('Please enter and save your API key.');
+                return;
+            }
+
+            const cityName = city || document.getElementById('city-input').value.trim();
+            if (!cityName) return;
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('error').style.display = 'none';
+
+            fetch(`https://api.openweathermap.org/data/2.5/weather?q=${cityName}&appid=${apiKey}&units=metric`)
+                .then(response => {
+                    if (!response.ok) throw new Error('City not found');
+                    return response.json();
+                })
+                .then(data => {
+                    displayWeather(data);
+                    updateHistory(cityName);
+                })
+                .catch(err => {
+                    document.getElementById('error').textContent = err.message;
+                    document.getElementById('error').style.display = 'block';
+                })
+                .finally(() => {
+                    document.getElementById('loading').style.display = 'none';
+                });
+        }
+
+        function displayWeather(data) {
+            const temp = useCelsius ? data.main.temp : (data.main.temp * 9 / 5 + 32);
+            const tempUnit = useCelsius ? '°C' : '°F';
+            const card = document.getElementById('weather-card');
+
+            card.innerHTML = `
+        <h2>${data.name}</h2>
+        <img src="https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png" alt="${data.weather[0].main}" />
+        <p><strong>${temp.toFixed(1)}${tempUnit}</strong></p>
+        <p>${data.weather[0].main}</p>
+        <p>Humidity: ${data.main.humidity}%</p>
+        <p>Wind: ${data.wind.speed} m/s</p>
+        <div class="toggle" onclick="toggleTemp(${data.main.temp})">
+          Toggle to ${useCelsius ? '°F' : '°C'}
+        </div>
+      `;
+        }
+
+        function toggleTemp(tempC) {
+            useCelsius = !useCelsius;
+            const tempF = tempC * 9 / 5 + 32;
+            const temp = useCelsius ? tempC : tempF;
+            const tempUnit = useCelsius ? '°C' : '°F';
+            const card = document.getElementById('weather-card');
+            const tempText = card.querySelector('p strong');
+            const toggleText = card.querySelector('.toggle');
+
+            if (tempText) tempText.textContent = `${temp.toFixed(1)}${tempUnit}`;
+            if (toggleText) toggleText.textContent = `Toggle to ${useCelsius ? '°F' : '°C'}`;
+        }
+
+        function updateHistory(cityName) {
+            if (!history.includes(cityName)) {
+                history.unshift(cityName);
+                if (history.length > 5) history.pop();
+                localStorage.setItem('weatherHistory', JSON.stringify(history));
+                renderHistory();
+            }
+        }
+
+        function renderHistory() {
+            const historyContainer = document.getElementById('search-history');
+            historyContainer.innerHTML = '';
+            history.forEach(city => {
+                const btn = document.createElement('button');
+                btn.textContent = city;
+                btn.onclick = () => getWeather(city);
+                historyContainer.appendChild(btn);
+            });
+        }
+
+        renderHistory();
+    </script>
+</body>
+
+</html>
