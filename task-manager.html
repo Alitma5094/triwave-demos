@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Task Manager</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 2rem;
+            background-color: #f9f9f9;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        form {
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            margin-bottom: 2rem;
+        }
+
+        input,
+        select,
+        button {
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #007BFF;
+            color: white;
+            cursor: pointer;
+        }
+
+        .filters {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .task-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .task-card {
+            background-color: white;
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            transition: transform 0.2s;
+        }
+
+        .task-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .task-actions {
+            margin-top: 1rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .done {
+            background-color: rgb(217, 237, 199);
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Task Manager</h1>
+    <form id="task-form">
+        <input type="text" id="title" placeholder="Task Title" required />
+        <select id="category">
+            <option value="Work">Work</option>
+            <option value="Personal">Personal</option>
+            <option value="Urgent">Urgent</option>
+        </select>
+        <input type="date" id="dueDate" required />
+        <select id="status">
+            <option value="Pending">Pending</option>
+            <option value="Done">Done</option>
+        </select>
+        <button type="submit">Add Task</button>
+    </form>
+
+    <div class="filters">
+        <select id="filter-category">
+            <option value="">All Categories</option>
+            <option value="Work">Work</option>
+            <option value="Personal">Personal</option>
+            <option value="Urgent">Urgent</option>
+        </select>
+        <select id="filter-status">
+            <option value="">All Statuses</option>
+            <option value="Pending">Pending</option>
+            <option value="Done">Done</option>
+        </select>
+        <button onclick="sortTasksByDate()">Sort by Due Date</button>
+    </div>
+
+    <div class="task-list" id="task-list"></div>
+
+    <script>
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
+        document.getElementById('task-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const task = {
+                id: Date.now(),
+                title: document.getElementById('title').value,
+                category: document.getElementById('category').value,
+                dueDate: document.getElementById('dueDate').value,
+                status: document.getElementById('status').value
+            };
+            tasks.push(task);
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+            this.reset();
+            renderTasks();
+        });
+
+        function renderTasks() {
+            const list = document.getElementById('task-list');
+            list.innerHTML = '';
+
+            const filterCategory = document.getElementById('filter-category').value;
+            const filterStatus = document.getElementById('filter-status').value;
+
+            tasks.filter(task => {
+                return (!filterCategory || task.category === filterCategory) &&
+                    (!filterStatus || task.status === filterStatus);
+            }).forEach(task => {
+                const card = document.createElement('div');
+
+                if (task.status == "Done") {
+                    card.className = 'task-card done';
+                } else {
+                    card.className = 'task-card';
+                }
+                card.innerHTML = `
+          <strong>${task.title}</strong><br>
+          <small>Category: ${task.category}</small><br>
+          <small>Due: ${task.dueDate}</small><br>
+          <small>Status: ${task.status}</small>
+          <div class="task-actions">
+            <button onclick="toggleStatus(${task.id})">${task.status === 'Pending' ? 'Mark Done' : 'Mark Pending'}</button>
+            <button onclick="editTask(${task.id})">Edit</button>
+            <button onclick="deleteTask(${task.id})">Delete</button>
+          </div>
+        `;
+                list.appendChild(card);
+            });
+        }
+
+        function toggleStatus(id) {
+            tasks = tasks.map(task => task.id === id ? { ...task, status: task.status === 'Pending' ? 'Done' : 'Pending' } : task);
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+            renderTasks();
+        }
+
+        function editTask(id) {
+            const task = tasks.find(t => t.id === id);
+            document.getElementById('title').value = task.title;
+            document.getElementById('category').value = task.category;
+            document.getElementById('dueDate').value = task.dueDate;
+            document.getElementById('status').value = task.status;
+            deleteTask(id);
+        }
+
+        function deleteTask(id) {
+            tasks = tasks.filter(task => task.id !== id);
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+            renderTasks();
+        }
+
+        function sortTasksByDate() {
+            tasks.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+            renderTasks();
+        }
+
+        document.getElementById('filter-category').addEventListener('change', renderTasks);
+        document.getElementById('filter-status').addEventListener('change', renderTasks);
+
+        renderTasks();
+    </script>
+</body>
+
+</html>
