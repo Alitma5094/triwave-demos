@@ -45,43 +45,56 @@
             margin-bottom: 1rem;
         }
 
-        .task-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 1rem;
-        }
-
-        .task-card {
+        table {
+            width: 100%;
+            border-collapse: collapse;
             background-color: white;
-            padding: 1rem;
+        }
+
+        th,
+        td {
+            padding: 0.75rem;
             border: 1px solid #ddd;
-            border-radius: 10px;
-            transition: transform 0.2s;
+            text-align: left;
         }
 
-        .task-card:hover {
-            transform: scale(1.02);
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        tr.done {
+            background-color: rgb(217, 237, 199);
         }
 
-        .task-actions {
-            margin-top: 1rem;
-            display: flex;
-            justify-content: space-between;
+        .action-buttons button {
+            margin-right: 0.5rem;
         }
 
         .hidden {
             display: none;
         }
 
-        .done {
-            background-color: rgb(217, 237, 199);
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #28a745;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease-in-out;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            opacity: 1;
+            pointer-events: auto;
         }
     </style>
 </head>
 
 <body>
     <h1>Task Manager</h1>
+
     <form id="task-form">
         <input type="text" id="title" placeholder="Task Title" required />
         <select id="category">
@@ -112,7 +125,20 @@
         <button onclick="sortTasksByDate()">Sort by Due Date</button>
     </div>
 
-    <div class="task-list" id="task-list"></div>
+    <table id="task-table">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Category</th>
+                <th>Due Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="task-list"></tbody>
+    </table>
+    <div id="toast" class="toast"></div>
+
 
     <script>
         let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
@@ -133,8 +159,8 @@
         });
 
         function renderTasks() {
-            const list = document.getElementById('task-list');
-            list.innerHTML = '';
+            const tbody = document.getElementById('task-list');
+            tbody.innerHTML = '';
 
             const filterCategory = document.getElementById('filter-category').value;
             const filterStatus = document.getElementById('filter-status').value;
@@ -143,44 +169,46 @@
                 return (!filterCategory || task.category === filterCategory) &&
                     (!filterStatus || task.status === filterStatus);
             }).forEach(task => {
-                const card = document.createElement('div');
+                const row = document.createElement('tr');
+                if (task.status === 'Done') row.classList.add('done');
 
-                if (task.status == "Done") {
-                    card.className = 'task-card done';
-                } else {
-                    card.className = 'task-card';
-                }
-                card.innerHTML = `
-          <strong>${task.title}</strong><br>
-          <small>Category: ${task.category}</small><br>
-          <small>Due: ${task.dueDate}</small><br>
-          <small>Status: ${task.status}</small>
-          <div class="task-actions">
-            <button onclick="toggleStatus(${task.id})">${task.status === 'Pending' ? 'Mark Done' : 'Mark Pending'}</button>
-            <button onclick="editTask(${task.id})">Edit</button>
-            <button onclick="deleteTask(${task.id})">Delete</button>
-          </div>
-        `;
-                list.appendChild(card);
+                row.innerHTML = `
+                    <td contenteditable="true" onblur="updateTask(${task.id}, 'title', this.innerText)">${task.title}</td>
+                    <td>
+                        <select onchange="updateTask(${task.id}, 'category', this.value)">
+                            <option ${task.category === 'Work' ? 'selected' : ''}>Work</option>
+                            <option ${task.category === 'Personal' ? 'selected' : ''}>Personal</option>
+                            <option ${task.category === 'Urgent' ? 'selected' : ''}>Urgent</option>
+                        </select>
+                    </td>
+                    <td><input type="date" value="${task.dueDate}" onchange="updateTask(${task.id}, 'dueDate', this.value)" /></td>
+                    <td>
+                        <select onchange="updateTask(${task.id}, 'status', this.value)">
+                            <option ${task.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                            <option ${task.status === 'Done' ? 'selected' : ''}>Done</option>
+                        </select>
+                    </td>
+                    <td class="action-buttons">
+                        <button onclick="deleteTask(${task.id})">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
             });
         }
 
-        function toggleStatus(id) {
-            tasks = tasks.map(task => task.id === id ? { ...task, status: task.status === 'Pending' ? 'Done' : 'Pending' } : task);
+        function updateTask(id, field, value) {
+            tasks = tasks.map(task =>
+                task.id === id ? { ...task, [field]: value } : task
+            );
             localStorage.setItem('tasks', JSON.stringify(tasks));
             renderTasks();
+            showToast('Task updated successfully!');
         }
 
-        function editTask(id) {
-            const task = tasks.find(t => t.id === id);
-            document.getElementById('title').value = task.title;
-            document.getElementById('category').value = task.category;
-            document.getElementById('dueDate').value = task.dueDate;
-            document.getElementById('status').value = task.status;
-            deleteTask(id);
-        }
 
         function deleteTask(id) {
+            const confirmed = confirm('Are you sure you want to delete this task?');
+            if (!confirmed) return;
             tasks = tasks.filter(task => task.id !== id);
             localStorage.setItem('tasks', JSON.stringify(tasks));
             renderTasks();
@@ -195,6 +223,16 @@
         document.getElementById('filter-status').addEventListener('change', renderTasks);
 
         renderTasks();
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000); // show for 3 seconds
+        }
+
     </script>
 </body>
 
