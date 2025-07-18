@@ -17,6 +17,7 @@ const server = http.createServer((req, res) => {
         });
     } else if (req.url === '/increment') {
         counter++;
+        console.log("Counter: " + counter);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ counter }));
     } else {
